@@ -26,13 +26,20 @@ st.write("Введите параметры для прогнозировани�
 
 # Ввод параметров
 country = st.selectbox("Страна", options=data['Country'].unique())
-year = st.number_input("Год", min_value=int(data['Year'].min()), max_value=2100, value=2025)
+
+# Получение последнего значения Metric Tons Per Capita для выбранной страны
+last_metric_value = data[data['Country'] == country].sort_values(by='Year', ascending=False)['Metric Tons Per Capita'].iloc[0]
+
+# Ползунок для Metric Tons Per Capita с последним значением для выбранной страны
 metric_tons_per_capita = st.slider(
     "Metric Tons Per Capita",
     min_value=float(data['Metric Tons Per Capita'].min()),
     max_value=float(data['Metric Tons Per Capita'].max()),
-    value=float(data['Metric Tons Per Capita'].mean())
+    value=float(last_metric_value)  # Устанавливаем последнее значение как начальное
 )
+
+# Ввод года
+year = st.number_input("Год", min_value=int(data['Year'].min()), max_value=2100, value=2020)
 
 if st.button("Прогнозировать"):
     # Прогнозирование
