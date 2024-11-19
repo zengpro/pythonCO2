@@ -7,6 +7,8 @@ from clearml import Task, Logger
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # ClearML: инициализация задачи
 task = Task.init(project_name="CO2 Forecasting", task_name="CO2 Model Training")
@@ -54,6 +56,7 @@ model.fit(X, y)
 # Сохранение модели
 model_path = 'co2_model.pkl'
 joblib.dump(model, model_path)
+
 task.upload_artifact(name="Trained Model", artifact_object=model_path)
 
 # Прогнозирование и оценка модели
@@ -71,3 +74,51 @@ logger.report_scalar("Metrics", "R2 Score", iteration=0, value=r2)
 # Вывод метрик
 print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}, R2 Score: {r2:.2f}")
 print("Модель сохранена в 'co2_model.pkl'")
+
+# 1. Тренды выбросов CO₂ по времени
+time_trends = data.groupby('Year')['Kilotons of Co2'].mean().reset_index()
+
+# Построение графика трендов выбросов
+plt.figure(figsize=(12, 6))
+plt.plot(time_trends['Year'], time_trends['Kilotons of Co2'], marker='o', linestyle='-', color='blue')
+plt.title("Тренды выбросов CO₂ по времени", fontsize=16)
+plt.xlabel("Год", fontsize=14)
+plt.ylabel("Средние выбросы CO₂ (Kilotons)", fontsize=14)
+plt.grid()
+plt.tight_layout()
+
+# Сохранение графика в файл и загрузка в ClearML
+plt.savefig("co2_trends.png")
+task.upload_artifact("CO2_Trends_Over_Time", artifact_object="co2_trends.png")
+plt.show()
+
+# 2. Влияние выбросов на душу населения
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='Metric Tons Per Capita', y='Kilotons of Co2', data=data, alpha=0.6)
+plt.title("Влияние выбросов на душу населения", fontsize=16)
+plt.xlabel("Выбросы на душу населения (Metric Tons Per Capita)", fontsize=14)
+plt.ylabel("Общие выбросы CO₂ (Kilotons)", fontsize=14)
+plt.grid()
+plt.tight_layout()
+
+# Сохранение графика в файл и загрузка в ClearML
+plt.savefig("co2_per_capita.png")
+task.upload_artifact("CO2 Emissions vs Per Capita", artifact_object="co2_per_capita.png")
+plt.show()
+
+# 3. Сравнение стран по выбросам
+top_countries = data.groupby('Country')['Kilotons of Co2'].mean().nlargest(10).reset_index()
+
+# Построение графика сравнения стран
+plt.figure(figsize=(12, 6))
+sns.barplot(x='Kilotons of Co2', y='Country', data=top_countries, palette='viridis')
+plt.title("Топ-10 стран с наибольшими выбросами CO₂", fontsize=16)
+plt.xlabel("Средние выбросы CO₂ (Kilotons)", fontsize=14)
+plt.ylabel("Страна", fontsize=14)
+plt.grid(axis='x')
+plt.tight_layout()
+
+# Сохранение графика в файл и загрузка в ClearML
+plt.savefig("top_10_countries.png")
+task.upload_artifact("Top 10 CO2 Emitting Countries", artifact_object="top_10_countries.png")
+plt.show()
